@@ -1,5 +1,39 @@
 # Technical Assignment
 
+## Usage
+
+```
+git clone <this project>
+cd <this project>
+```
+
+This uses Google Cloud Platform, so you need terraform and the corresponding
+GCP provider installed.
+
+Then pick a project ID. The first line will do that automatically, but you can
+edit it if you like. The project ID needs to be unique, so there could be a
+retry necessary if it is already taken.
+```
+export PROJECT_ID="something-${RANDOM}"
+gcloud projects create $PROJECT_ID  # retry the first two lines if this fails
+gcloud config set project $PROJECT_ID
+```
+
+Create a service account for terraform to use, and give it some permissions.
+```
+gcloud iam service-accounts create terraform-service-account
+gcloud iam service-accounts keys create ~/.gcloud/${PROJECT_ID}.json --iam-account terraform-service-account@${PROJECT_ID}.iam.gserviceaccount.com
+gcloud projects add-iam-policy-binding ${PROJECT_ID} --member=serviceAccount:terraform-service-account@${PROJECT_ID}.iam.gserviceaccount.com --role=roles/compute.admin --role=roles/storage.admin --role=roles/container.admin
+```
+
+Put the credentials file and project ID somewhere terraform can use it.
+```
+if [ ! -f tf/terraform.tfvars ] ; then
+    echo "gcp_credentials_file = "~/.gcloud/${PROJECT_ID}.json" >> tf/terraform.tfvars
+    echo "gcp_project = "${PROJECT_ID}" >> tf/terraform.tfvars
+fi
+```
+
 ## Requirements
 - Spin Up a Ubuntu VM with Terraform that has two interfaces: one external
   Interface and one Internal Interface.
