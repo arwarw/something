@@ -58,10 +58,12 @@ resource "google_compute_network" "internal-network" {
 	delete_default_routes_on_create = true	# no routes to anywhere
 }
 
-resource "google_compute_firewall" "default" {
-	name = "default"
+resource "google_compute_firewall" "default-allow" {
+	name = "default-allow"
 	# firewall rules for the default (external NATed) network
 	network = "default"
+
+	priority = 1000
 
 	allow {
 		protocol = "icmp"
@@ -69,20 +71,32 @@ resource "google_compute_firewall" "default" {
 
 	allow {
 		protocol = "tcp"
-		ports = ["20", "80", "443"]
-	}
-
-	deny {
-		protocol = "tcp"
-		ports = ["3389"]
+		ports = ["22", "80", "443"]
 	}
 
 	source_ranges = ["0.0.0.0/0"]
 }
 
-resource "google_compute_firewall" "internal-network" {
-	name = "internal-network"
+resource "google_compute_firewall" "default-deny" {
+	name = "default-deny"
+	# firewall rules for the default (external NATed) network
+	network = "default"
+
+	# deny is lower prio than allow, to restrict what hasn't been allowed yet.
+	priority = 2000
+
+	# deny all that hasn't been explicitly allowed. this is necessary also because there are some implicit allow rules at priority=65535.
+	deny { protocol = "all" }
+
+	source_ranges = ["0.0.0.0/0"]
+}
+
+resource "google_compute_firewall" "internal-network-allow" {
+	name = "internal-network-allow"
 	network = google_compute_network.internal-network.name
+
+	priority = 1000
+
 	allow {
 		protocol = "icmp"
 	}
@@ -93,6 +107,17 @@ resource "google_compute_firewall" "internal-network" {
 	}
 
 	source_ranges = ["10.200.16.96/29"]
+}
+
+resource "google_compute_firewall" "internal-network-deny" {
+	name = "internal-network-deny"
+	network = google_compute_network.internal-network.name
+
+	priority = 2000
+
+	deny { protocol = "all" }
+
+	source_ranges = ["0.0.0.0/0"]
 }
 
 resource "google_compute_instance" "vm" {
@@ -138,6 +163,8 @@ resource "google_compute_instance" "device9000vm" {
 		subnetwork = "internal-subnetwork"
 		network_ip = "10.200.16.100"
 	}
+
+	metadata_startup_script = "hexdump -C /dev/urandom | nc -k -l 9000" # make the device do something interesting on port 9000
 }
 
 output "ip" {
