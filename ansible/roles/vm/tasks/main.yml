@@ -1,0 +1,11 @@
+---
+- name: apt dist-upgrade
+  apt:
+    update-cache: true
+    upgrade: dist
+
+- name: install apache
+  apt:
+    name: apache2
+    state: present
+

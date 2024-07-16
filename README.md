@@ -63,6 +63,13 @@ If you are doing this for the first time(s) this might need a few retries.
 Enabling all GCP services for the first time in a project is asynchronous and
 takes some time, meanwhile you will get corresponding API errors.
 
+Your SSH public key (default `~/.ssh/id_rsa.pub`, change in tf/terraform.tfvars
+if desired) will be automatically copied over to all created VMs. You
+can inspect the VMs using `ssh user@<IP>` with the IP address output from the
+terraform script.
+
+
+
 ## Requirements
 - Spin Up a Ubuntu VM with Terraform that has two interfaces: one external
   Interface and one Internal Interface.
