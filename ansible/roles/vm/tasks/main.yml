@@ -4,6 +4,6 @@
     update-cache: true
     upgrade: dist
 
-- include_task: apache.yml
-- include_task: ssh.yml
-- include_task: secure.yml
+- include_tasks: apache.yml
+- include_tasks: ssh.yml
+- include_tasks: secure.yml
