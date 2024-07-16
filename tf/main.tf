@@ -58,6 +58,43 @@ resource "google_compute_network" "internal-network" {
 	delete_default_routes_on_create = true	# no routes to anywhere
 }
 
+resource "google_compute_firewall" "default" {
+	name = "default"
+	# firewall rules for the default (external NATed) network
+	network = "default"
+
+	allow {
+		protocol = "icmp"
+	}
+
+	allow {
+		protocol = "tcp"
+		ports = ["20", "80", "443"]
+	}
+
+	deny {
+		protocol = "tcp"
+		ports = ["3389"]
+	}
+
+	source_ranges = ["0.0.0.0/0"]
+}
+
+resource "google_compute_firewall" "internal-network" {
+	name = "internal-network"
+	network = google_compute_network.internal-network.name
+	allow {
+		protocol = "icmp"
+	}
+
+	allow {
+		protocol = "tcp"
+		ports = ["9000"]
+	}
+
+	source_ranges = ["10.200.16.96/29"]
+}
+
 resource "google_compute_instance" "vm" {
 	name = "vm"
 	machine_type = "e2-micro" # free for a month in free tier, sufficient for a demo
