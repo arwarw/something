@@ -4,8 +4,6 @@
     update-cache: true
     upgrade: dist
 
-- name: install apache
-  apt:
-    name: apache2
-    state: present
-
+- include_task: apache.yml
+- include_task: ssh.yml
+- include_task: secure.yml

@@ -1,0 +1,7 @@
+---
+
+# usually this is installed anyways, but make sure it stays.
+- name: install openssh
+  apt:
+    name: openssh-server
+    state: present
