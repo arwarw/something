@@ -8,12 +8,13 @@
 # Also, this can be dangerous if ansible decides to forgo ControlMaster and spam tons
 # of SSH connections, because this will get the admin locked out...
 # But we can always kill the VM.
-- name: firewall limit ssh connection attempts
-  ufw:
-    src: "0.0.0.0/0"
-    proto: tcp
-    port: 22
-    rule: limit
+#
+# - name: firewall limit ssh connection attempts
+#   ufw:
+#     src: "0.0.0.0/0"
+#     proto: tcp
+#     port: 22
+#     rule: limit
 
 # We already did this in GCP. But defense in depth, yada yada...
 - name: firewall allow desired ports from external sources
@@ -25,7 +26,7 @@
   loop:
     - "80"
     - "443"
-    # - "22" # if you remove the ssh limit rule above, remember to include port 22 here
+    - "22" # if you want the ssh limit rule above, remember to remove port 22 here
 
 # note that ufw accepts sensible ICMP packets by default
 
