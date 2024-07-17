@@ -37,3 +37,9 @@ variable "ssh_pubkey_file" {
 	default = "~/.ssh/id_rsa.pub"
 }
 
+variable "ssh_privkey_file" {
+	type = string
+	description = "ssh private key file to authorize for the user and root account on all VMs created in this project"
+	default = "~/.ssh/id_rsa"
+}
+

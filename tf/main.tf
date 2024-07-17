@@ -143,9 +143,22 @@ resource "google_compute_instance" "vm" {
 		network_ip = "10.200.16.99"
 	}
 
+	# the remote connection is just to make sure the VM is available before we locally execute ansible
+	connection {
+		type = "ssh"
+		user = "user"
+		host = self.network_interface.0.access_config.0.nat_ip
+		private_key =  file(var.ssh_privkey_file))
+	}
+
+	provisioner "remote-exec" {
+		inline = [
+			"uname -a"
+		]
+	}
+
 	provisioner "local-exec" {
-		# command = "cd ../ansible ; ansible-playbook site.yml"
-		command = "echo hallo!!"
+		command = "cd ../ansible ; ansible-playbook site.yml"
 	}
 
 	depends_on = [
