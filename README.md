@@ -68,8 +68,6 @@ if desired) will be automatically copied over to all created VMs. You
 can inspect the VMs using `ssh user@<IP>` with the IP address output from the
 terraform script.
 
-
-
 ## Requirements
 - Spin Up a Ubuntu VM with Terraform that has two interfaces: one external
   Interface and one Internal Interface.
@@ -86,3 +84,27 @@ terraform script.
   Further describe your intentions you want to achieve with your Code. Share
   your Repository with us
 
+## Deviations
+
+- The requirement about the vswitch only accepting tagged VLAN 150 packets is
+  not really possible in GCP (they seem to filter 802.1q tags) and doesn't really
+  make much sense in an cloud environment anyways. Subnetworks are basically the
+  equivalent to what VLANs are used for in physical machines. If one really
+  wanted to do something like this, the netplan snippet would look something
+  like:
+```
+   vlans:
+     ens5.150:
+       id: 150
+       link: ens5
+       addresses: [ "10.200.16.99/29" ]
+```
+
+- I've misunderstood the port 9000 access requirement. I thought my VM should
+  access the device on port 9000/tcp, not the other way around. Currently the
+  wrong implementation is still in, with the device providing a hexdump of
+  /dev/urandom on 9000/tcp over the internal net to my VM.
+
+  I can do it the right way, but then would need a clarification on what you
+  mean by "access to your VM". I could configure the HTTP(s) or SSH server to
+  listen on that port in addition to the canonical ones?
