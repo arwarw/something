@@ -77,6 +77,7 @@
       - tnftp
       - ubuntu-pro-client
       - xfsprogs
+  register: removed
 
 # Actually to be useful, this needs working email or syslog, which we don't have here. But it is the thought that counts.
 # aide will periodically checksum all files and alert on unexpected changes, e.g. because an attacker modified something.
@@ -84,6 +85,24 @@
   apt:
     name: aide
     state: present
+  register: aide
+
+# aide tries to run as non-root through capabilities, which causes it to not be able to use mailx&co. But we don't have
+# email configured anyways and (at least assume to) use syslog and monitor that
+#
+# Uses lineinfile, just for variety, I usually prefer copy or template because it gives better control.
+- name: prevent aide from trying to send email
+  lineinfile:
+    path: /etc/default/aide
+    regex: "^\s*SILENTREPORTS\s*="
+    line: SILENTREPORTS=yes
+    insertafter: "^#\s*SILENTREPORTS\s*="
+    state: present
+
+- name: execute aideinit after installation (this will take a while)
+  command:
+    cmd: aideinit
+  when: aide.changed
 
 # we should create a syslog destination here, but that would need another
 # VM. I'll do it in spirit and have the system send logs to the
@@ -142,3 +161,9 @@
     name: ssh
     state: restarted
   when: config.changed
+
+# One could also make sure that all services are stopped, but I thing a reboot
+# is cleaner, especially after a fresh installation and first ansible run.
+- name: reboot after removing packages (especially daemons)
+  reboot:
+  when: removed.changed
