@@ -147,6 +147,10 @@ resource "google_compute_instance" "vm" {
 		# command = "cd ../ansible ; ansible-playbook site.yml"
 		command = "echo hallo!!"
 	}
+
+	depends_on = [
+		google_compute_subnetwork.internal-subnetwork
+	]
 }
 
 resource "google_compute_instance" "device9000vm" {
@@ -165,6 +169,10 @@ resource "google_compute_instance" "device9000vm" {
 	}
 
 	metadata_startup_script = "hexdump -C /dev/urandom | nc -k -l 9000" # make the device do something interesting on port 9000
+
+	depends_on = [
+		google_compute_subnetwork.internal-subnetwork
+	]
 }
 
 output "ip" {
