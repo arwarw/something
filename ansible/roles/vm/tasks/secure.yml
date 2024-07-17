@@ -128,3 +128,17 @@
     group: root
     mode: "0444"
 
+- name: deploy our changed sshd_config
+  copy:
+    src: sshd_config
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: "0444"
+  register: config
+
+- name: restart if necessary
+  service:
+    name: ssh
+    state: restarted
+  when: config.changed

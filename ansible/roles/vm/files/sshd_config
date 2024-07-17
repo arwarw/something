@@ -30,7 +30,13 @@ Include /etc/ssh/sshd_config.d/*.conf
 # Authentication:
 
 #LoginGraceTime 2m
-#PermitRootLogin prohibit-password
+
+# We are allowing 'user' with passwordless sudo, so we might as well allow direct root login
+#
+# If there were more than one administrative user, disallowing root and using personalized sudo
+# can be preferrable for accountability purposes.
+# PermitRootLogin prohibit-password
+
 #StrictModes yes
 #MaxAuthTries 6
 #MaxSessions 10
@@ -54,7 +60,7 @@ Include /etc/ssh/sshd_config.d/*.conf
 #IgnoreRhosts yes
 
 # To disable tunneled clear text passwords, change to no here!
-#PasswordAuthentication yes
+PasswordAuthentication no
 #PermitEmptyPasswords no
 
 # Change to yes to enable challenge-response passwords (beware issues with
@@ -120,3 +126,29 @@ Subsystem	sftp	/usr/lib/openssh/sftp-server
 #	AllowTcpForwarding no
 #	PermitTTY no
 #	ForceCommand cvs server
+
+# This could also be done through a 'sshusers' group or something.
+AllowUsers user
+
+
+# Assuming SSH is to be used for administrative purposes, we can sacrifice some
+# performance and compatibility for security One could even leave out one of
+# either RSA or Ed25519, but I'll leave both it for at least some
+# compatibility.  On cloud instances, RSA could be a problem because it is more
+# prone to side-channels due to the large key sizes, slow execution and
+# difficulty of doing constant-time RSA implementations.
+
+# at least go above 128bit symmetric equivalent
+RequiredRSASize 4096
+
+# no reason to allow anything weaker than 256bits here
+Ciphers chacha20-poly1305@openssh.com,aes256-ctr,aes256-gcm@openssh.com
+
+# avoid NIST curves (for paranoia reasons), avoid DSA, we don't use certificates or hardware devices here, pick the longer digest for RSA
+HostkeyAlgorithms ssh-ed25519,rsa-sha2-512
+
+# postQuantum could be nice, otherwise prefer larger digest sizes
+KexAlgorithms sntrup761x25519-sha512@openssh.com,curve25519-sha256,diffie-hellman-group18-sha512,diffie-hellman-group16-sha512
+
+# more bits are better, so pick the 512 ones.
+MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-512
