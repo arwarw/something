@@ -2,7 +2,3 @@
 - hosts: vm
   roles:
     - vm
-
-- hosts: device9000vm
-  roles:
-    - device9000vm

@@ -1,1 +1,130 @@
 ---
+
+# This rate-limits ssh connection attempts. This makes things nicer (because
+# the logs aren't as full of brute-force attempts) but not really more secure.
+# If any password should be guessable by the usual unsophisticated brute-force
+# bots, it is game over anyways, rate-limiting will not help there.
+#
+# Also, this can be dangerous if ansible decides to forgo ControlMaster and spam tons
+# of SSH connections, because this will get the admin locked out...
+# But we can always kill the VM.
+- name: firewall limit ssh connection attempts
+  ufw:
+    src: "0.0.0.0/0"
+    proto: tcp
+    port: 22
+    rule: limit
+
+# We already did this in GCP. But defense in depth, yada yada...
+- name: firewall allow desired ports from external sources
+  ufw:
+    src: "0.0.0.0/0"
+    proto: tcp
+    port: "{{ item }}"
+    rule: allow
+  loop:
+    - "80"
+    - "443"
+    # - "22" # if you remove the ssh limit rule above, remember to include port 22 here
+
+# note that ufw accepts sensible ICMP packets by default
+
+- name: firewall enabled and default deny
+  ufw:
+    state: enabled
+    policy: deny
+
+# The cloud image already does unattended-upgrades and has
+# security.ubuntu.com as package source. Otherwise those would have to be
+# configured here.
+
+- name: remove packages we don't need
+  apt:
+    state: absent
+    name: # This list is of course debateable. The intent is to a) provide an attacker with as few tools as possible and b) remove stuff that could maybe listen on a network port
+      - apport
+      - bcache-tools
+      - bpftrace
+      - bpfcc-tools
+      - dbus
+      - dmeventd
+      - dmidecode
+      - dmsetup
+      - dosfstools
+      - ftp
+      - curl
+      - fuse3
+      - gdisk
+      - gir1.2-girepository-2.0
+      - gir1.2-glib-2.0
+      - gir1.2-packagekitglib-1.0
+      - inetutils-telnet
+      - landscape-common
+      - lvm2
+      - lxd-agent-loader
+      - lxd-installer
+      - multipath-tools
+      - netcat-openbsd
+      - ntfs-3g
+      - open-iscsi
+      - parted
+      - pastebinit
+      - plymouth
+      - polkitd
+      - rsync
+      - snapd
+      - tcpdump
+      - tnftp
+      - ubuntu-pro-client
+      - xfsprogs
+
+# Actually to be useful, this needs working email or syslog, which we don't have here. But it is the thought that counts.
+# aide will periodically checksum all files and alert on unexpected changes, e.g. because an attacker modified something.
+- name: install aide to checksum the system
+  apt:
+    name: aide
+    state: present
+
+# we should create a syslog destination here, but that would need another
+# VM. I'll do it in spirit and have the system send logs to the
+# traditional 'loghost'.
+- name: install rsyslog # usually not necessary, just to make sure.
+  apt:
+    name: rsyslog
+    state: present
+
+- name: enable rsyslog
+  service:
+    name: rsyslog
+    enabled: true
+    state: started
+
+- name: write rsyslog config
+  copy:
+    content: '%.% @@loghost:514'
+    dest: /etc/rsyslog.d/loghost.conf
+    owner: root
+    group: root
+    mode: "0444"
+  register: rsyslogconf
+
+- name: restart rsyslog if necessary
+  service:
+    name: rsyslog
+    state: restarted
+  when: rsyslogconf.changed
+
+- name: apache disable CGI directory
+  command:
+    cmd: a2disconf serve-cgi-bin
+    removes: /etc/apache2/conf-enabled/serve-cgi-bin.conf
+  register: cgibin
+
+- name: apache deploy more restrictive security.conf # limits version and machine info an attacker might easily see
+  copy:
+    src: security.conf
+    dest: /etc/apache2/conf-available/security.conf
+    owner: root
+    group: root
+    mode: "0444"
+

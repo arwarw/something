@@ -4,5 +4,43 @@
   apt:
     name: apache2
     state: present
+  register: installed
+
+# Actually, this should be something to create a real TLS certificate, e.g. via
+# certbot/letsencrypt.  But that would need a real domain name, which is hard
+# to in a portable example since that involves buying a domain which isn't
+# possible without a 'enter credit card details into this terraform script
+# here...'.
+# So I'll go with self-signed:
+- name: make sure the default self-signed snakeoil certificate is present
+  command:
+    cmd: make-ssl-cert generate-default-snakeoil
+    creates: /etc/ssl/certs/ssl-cert-snakeoil.pem
+  register: certificate
 
 
+- name: enable tls module
+  apache2_module: # weird that this is an actual ansible module...
+    name: ssl
+    state: present
+  register: tls
+
+- name: enable default-ssl site
+  command:
+    cmd: a2ensite default-ssl # ... but this isn't
+    creates: /etc/apache2/sites-enabled/default-ssl.conf
+  register: site
+
+- name: restart apache service
+  service:
+    name: apache2
+    state: restarted
+  when: installed.changed or certificate.changed or tls.changed or site.changed
+
+- name: replace index.html
+  copy:
+    content: "<html><body>Hello World!</body></html>"
+    dest: /var/www/html/index.html
+    owner: root
+    group: root
+    mode: 0444
