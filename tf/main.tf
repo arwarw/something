@@ -148,7 +148,7 @@ resource "google_compute_instance" "vm" {
 		type = "ssh"
 		user = "user"
 		host = self.network_interface.0.access_config.0.nat_ip
-		private_key =  file(var.ssh_privkey_file))
+		private_key =  file(var.ssh_privkey_file)
 	}
 
 	provisioner "remote-exec" {
@@ -158,7 +158,7 @@ resource "google_compute_instance" "vm" {
 	}
 
 	provisioner "local-exec" {
-		command = "cd ../ansible ; ansible-playbook site.yml"
+		command = "cd ../ansible ; ansible-playbook -l vm site.yml"
 	}
 
 	depends_on = [

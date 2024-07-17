@@ -94,9 +94,9 @@
 - name: prevent aide from trying to send email
   lineinfile:
     path: /etc/default/aide
-    regex: "^\s*SILENTREPORTS\s*="
+    regex: '^\s*SILENTREPORTS\s*='
     line: SILENTREPORTS=yes
-    insertafter: "^#\s*SILENTREPORTS\s*="
+    insertafter: '^#\s*SILENTREPORTS\s*='
     state: present
 
 - name: execute aideinit after installation (this will take a while)
