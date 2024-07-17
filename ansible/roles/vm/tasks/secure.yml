@@ -99,9 +99,12 @@
     insertafter: '^#\s*SILENTREPORTS\s*='
     state: present
 
-- name: execute aideinit after installation (this will take a while)
-  command:
-    cmd: aideinit
+- name: execute aideinit after installation (as an at-job to not hold up things here...)
+  at:
+    command: aideinit
+    unique: true
+    count: 20
+    units: minutes
   when: aide.changed
 
 # we should create a syslog destination here, but that would need another
