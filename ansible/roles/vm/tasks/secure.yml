@@ -168,8 +168,9 @@
     state: restarted
   when: config.changed
 
-# One could also make sure that all services are stopped, but I thing a reboot
+# One could also make sure that all services are stopped, but I think a reboot
 # is cleaner, especially after a fresh installation and first ansible run.
-- name: reboot after removing packages (especially daemons)
-  reboot:
-  when: removed.changed
+# On the other hand, the reboot here messes with ansible and terraform, so disable it for now.
+# - name: reboot after removing packages (especially daemons)
+#   reboot:
+#   when: removed.changed
