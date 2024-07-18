@@ -82,9 +82,11 @@
 
 # Actually to be useful, this needs working email or syslog, which we don't have here. But it is the thought that counts.
 # aide will periodically checksum all files and alert on unexpected changes, e.g. because an attacker modified something.
-- name: install aide to checksum the system
+- name: install aide to checksum the system (and atd for delayed aideinit)
   apt:
-    name: aide
+    name:
+      - aide
+      - at
     state: present
   register: aide
 
